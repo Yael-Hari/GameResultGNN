@@ -4,69 +4,46 @@ from torch_geometric.data import Data, DataLoader
 import numpy as np
 import const
 
-# def combined_adjacency_to_data(home_adj, away_adj, num_nodes):
-#     """
-#     Convert home and away adjacency matrices into a stacked PyTorch Geometric Data object with last-axis stacking.
-#     num_nodes: Number of nodes in each of the graphs (home and away)
-#     """
-#     # Combine home and away adjacency matrices
-#     stacked_adj = np.concatenate([home_adj, away_adj], axis=-1)  # Shape: (9, 42, 84)
-    
-#     edge_index_list = []
-#     edge_weight_list = []
-    
-#     for time_layer in range(stacked_adj.shape[0]):
-#         adj_layer = stacked_adj[time_layer]
-#         row, col = np.nonzero(adj_layer)
-
-#         # Ensure edges are within bounds by creating edge_index based on combined node count
-#         edge_index = torch.tensor([row, col], dtype=torch.long)
-#         edge_weight = torch.tensor(adj_layer[row, col], dtype=torch.float)
-        
-#         edge_index_list.append(edge_index)
-#         edge_weight_list.append(edge_weight)
-    
-#     edge_index = torch.cat(edge_index_list, dim=1)
-#     edge_weight = torch.cat(edge_weight_list)
-    
-#     """
-#     Examples of Meaningful Node Features for Football Pass Analysis:
-#     Pass Counts: For each sector (node), the total number of passes starting or ending in that sector could serve as a feature, giving a sense of sector activity.
-#     Average Pass Distance: Nodes could carry information about the average distance of passes involving them, capturing spatial dynamics.
-#     Possession Time: If you have data on how long each sector was occupied by a team, it could be helpful as a feature.
-#     Heatmap Data: For each node, you could use normalized values indicating how often that sector is involved in gameplay.
-#     Team-Specific Features: If home and away sectors differ significantly, adding team-specific indicators to distinguish between teams might be useful.
-#     """
-
-#     # Flatten the stacked adjacency matrices
-#     adj_flat = stacked_adj.reshape(-1)
-#     adj_tensor = torch.tensor(adj_flat, dtype=torch.float)
-    
-#     # Node features (adjust as needed)
-#     x = torch.eye(num_nodes * 2, dtype=torch.float)  # Shape: [84, 84]
-
-#     data = Data(x=x, edge_index=edge_index, edge_attr=edge_weight, num_nodes=num_nodes*2)
-#     data.adj = adj_tensor  # Store the target adjacency tensor
-
-
-#     return data
-
 
 def combined_adjacency_to_data(home_adj, away_adj, num_nodes):
-    # Stack home and away adjacency matrices along the last dimension
-    stacked_adj = np.concatenate([home_adj, away_adj], axis=-1)  # Shape: (9, 21, 42)
+    num_nodes_total = num_nodes * 2  # Total number of nodes (home and away)
+
+    # Initialize a zero adjacency matrix for each time interval
+    stacked_adj = np.zeros((const.NUM_TIME_INTERVALS, num_nodes_total, num_nodes_total))
+
+    # Place home_adj into the top-left block
+    stacked_adj[:, :num_nodes, :num_nodes] = home_adj  # Shape: [9, 21, 21]
+
+    # Place away_adj into the bottom-right block
+    stacked_adj[:, num_nodes:, num_nodes:] = away_adj  # Shape: [9, 21, 21]
+
+    # Flatten the stacked adjacency matrices for the target
+    adj_flat = stacked_adj.reshape(-1)  # Shape: [flattened_size]
+    adj_tensor = torch.tensor(adj_flat, dtype=torch.float)
     
-    # Flatten the stacked adjacency matrices
-    adj_flat = stacked_adj.reshape(1, -1)  # Add batch dimension
-    adj_tensor = torch.tensor(adj_flat, dtype=torch.float)  # Shape: [1, 9*21*42]
+    # Generate edge_index and edge_weight lists
+    edge_index_list = []
+    edge_weight_list = []
+    
+    for time_layer in range(stacked_adj.shape[0]):
+        adj_layer = stacked_adj[time_layer]
+        row, col = np.nonzero(adj_layer)
+        edge_indices = torch.tensor([row, col], dtype=torch.long)
+        edge_weights = torch.tensor(adj_layer[row, col], dtype=torch.float)
+        
+        edge_index_list.append(edge_indices)
+        edge_weight_list.append(edge_weights)
+    
+    # Concatenate edge_index and edge_weight across all time layers
+    edge_index = torch.cat(edge_index_list, dim=1)  # Shape: [2, total_num_edges]
+    edge_weight = torch.cat(edge_weight_list)       # Shape: [total_num_edges]
     
     # Node features
-    x = torch.eye(num_nodes * 2, dtype=torch.float)  # Shape: [42, 42]
+    x = torch.eye(num_nodes_total, dtype=torch.float)  # Shape: [42, 42]
     
-    data = Data(x=x, num_nodes=num_nodes * 2)
-    data.adj = adj_tensor  # Store the adjacency tensor
+    data = Data(x=x, edge_index=edge_index, edge_attr=edge_weight, num_nodes=num_nodes_total)
+    data.adj = adj_tensor  # Shape: [flattened_size]
     return data
-
 
 
 # Prepare training dataset
@@ -92,6 +69,7 @@ def prepare_data(pkl_path, num_nodes, batch_size=4):
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     return data_loader
+
 
 if __name__ == '__main__':
     pkl_path = f'passes_data_{const.NUM_TIME_INTERVALS}_time_intervals.pkl'

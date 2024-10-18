@@ -1,9 +1,9 @@
-import pickle
-import torch
+# import pickle
+# import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool
-import const
+# import const
 
 """
 Next Steps:
@@ -29,25 +29,29 @@ class GraphGenerativeModel(nn.Module):
         self.conv1 = GCNConv(in_channels, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, out_channels)
         
-        # Fully connected layer to predict the adjacency matrices
-        self.fc = nn.Linear(out_channels, num_time_intervals * num_nodes * num_nodes * 2)
+        # Compute the flattened size
+        self.num_nodes_total = num_nodes * 2  # Total number of nodes (home and away)
+        self.flattened_size = num_time_intervals * self.num_nodes_total * self.num_nodes_total  # 9 * 42 * 42
         
-        self.num_nodes = num_nodes
+        # Fully connected layer to predict the flattened adjacency matrices
+        self.fc = nn.Linear(out_channels, self.flattened_size)
+        
         self.num_time_intervals = num_time_intervals
         
     def forward(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
+        x, edge_index, edge_weight, batch = data.x, data.edge_index, data.edge_attr, data.batch
         
-        # GCN layers
-        x = F.relu(self.conv1(x, edge_index))
-        x = F.relu(self.conv2(x, edge_index))
+        # GCN layers with edge weights
+        x = F.relu(self.conv1(x, edge_index, edge_weight))
+        x = F.relu(self.conv2(x, edge_index, edge_weight))
         
         # Global pooling
         x = global_mean_pool(x, batch)  # Shape: [batch_size, out_channels]
         
         # Fully connected layer
-        x = self.fc(x)  # Shape: [batch_size, 9 * 21 * 42]
+        x = self.fc(x)  # Shape: [batch_size, flattened_size]
         
-        # Reshape to [batch_size, 9, 21, 42]
-        adj_matrix_pred = x.view(-1, self.num_time_intervals, self.num_nodes, self.num_nodes * 2)
+        # Output is already flattened
+        adj_matrix_pred = x  # Shape: [batch_size, flattened_size]
+        
         return adj_matrix_pred

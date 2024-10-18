@@ -14,7 +14,8 @@ def train_epoch(model, data_loader, optimizer, device):
         data = data.to(device)
         optimizer.zero_grad()
         
-        adj_pred = model(data)  # Shape: [batch_size, 9, 21, 42]
+        adj_pred = model(data)  # Shape: [batch_size, flattened_size]
+        adj_target = data.adj.to(device)  # Shape: [batch_size, flattened_size]
         
         # Reshape adj_target to match adj_pred
         adj_target = data.adj.view(adj_pred.size())
