@@ -34,10 +34,10 @@ def gen_weighted_adjacency_matrices(game_passes_df, home_team, num_time_interval
     # Determine number of time intervals for each half (0-44 minutes and 45-90 minutes)
 
     # create 3D adjacency matrices for both halves (time layers by sectors by sectors)
-    adjacency_matrix_home_1st_half = np.zeros((num_time_intervals, const.NUM_SECTORS, const.NUM_SECTORS))
-    adjacency_matrix_away_1st_half = np.zeros((num_time_intervals, const.NUM_SECTORS, const.NUM_SECTORS))
-    adjacency_matrix_home_2nd_half = np.zeros((num_time_intervals, const.NUM_SECTORS, const.NUM_SECTORS))
-    adjacency_matrix_away_2nd_half = np.zeros((num_time_intervals, const.NUM_SECTORS, const.NUM_SECTORS))
+    adjacency_matrix_home_1st_half = np.zeros((num_time_intervals, const.NUM_NODES_SINGLE_TEAM, const.NUM_NODES_SINGLE_TEAM))
+    adjacency_matrix_away_1st_half = np.zeros((num_time_intervals, const.NUM_NODES_SINGLE_TEAM, const.NUM_NODES_SINGLE_TEAM))
+    adjacency_matrix_home_2nd_half = np.zeros((num_time_intervals, const.NUM_NODES_SINGLE_TEAM, const.NUM_NODES_SINGLE_TEAM))
+    adjacency_matrix_away_2nd_half = np.zeros((num_time_intervals, const.NUM_NODES_SINGLE_TEAM, const.NUM_NODES_SINGLE_TEAM))
 
     # helper function to populate adjacency matrices
     def populate_adjacency_matrix(pass_data, adj_matrix_home, adj_matrix_away, half_start_minute):
@@ -79,11 +79,22 @@ def gen_weighted_adjacency_matrices(game_passes_df, home_team, num_time_interval
     # populate matrices for 2nd half
     populate_adjacency_matrix(second_half_passes, adjacency_matrix_home_2nd_half, adjacency_matrix_away_2nd_half, 45)
 
+    # set the game outcome
+    home_score = game_passes_df['home_score'].iloc[0]
+    away_score = game_passes_df['away_score'].iloc[0]
+    game_outcome = (
+        1 if home_score > away_score else 
+        2 if home_score < away_score else 
+        0
+    )
+
+    # return the adjacency matrices
     return {
         'home_1st_half': adjacency_matrix_home_1st_half,
         'away_1st_half': adjacency_matrix_away_1st_half,
         'home_2nd_half': adjacency_matrix_home_2nd_half,
-        'away_2nd_half': adjacency_matrix_away_2nd_half
+        'away_2nd_half': adjacency_matrix_away_2nd_half,
+        'game_outcome': game_outcome
     }
 
 
@@ -162,9 +173,10 @@ def build_data(save_pkl_to_path='passes_data.pkl'):
 if __name__ == '__main__':
 
     pkl_path = f'passes_data_{const.NUM_TIME_INTERVALS}_time_intervals.pkl'
+    print(f"num time intervals: {const.NUM_TIME_INTERVALS}")
 
     # build data
-    # build_data(save_pkl_to_path=pkl_path)
+    build_data(save_pkl_to_path=pkl_path)
 
     # load data
     with open(pkl_path, 'rb') as f:

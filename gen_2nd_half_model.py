@@ -3,7 +3,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool
-# import const
+import const
 
 """
 Next Steps:
@@ -22,7 +22,15 @@ Alternative Architectures: Test other architectures like Graph Attention Network
 """
 
 class GraphGenerativeModel(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_nodes, num_time_intervals):
+    def __init__(
+            self, 
+            in_channels=const.NUM_NODES_SINGLE_TEAM * 2, 
+            hidden_channels=64, 
+            out_channels=32, 
+            num_nodes=const.NUM_NODES_SINGLE_TEAM, 
+            num_time_intervals=const.NUM_TIME_INTERVALS
+        ):
+        
         super(GraphGenerativeModel, self).__init__()
         
         # Define GCN layers
