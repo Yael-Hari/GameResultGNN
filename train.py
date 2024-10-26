@@ -6,6 +6,9 @@ from torch_geometric.loader import DataLoader
 from gen_2nd_half_model import GraphGenerativeModel
 from data_preperation import prepare_data_for_gen_2nd_half_model
 from game_outcome_predict_model import GameOutcomePredictor
+from temporal_conv import GameOutcomePredictorV4
+from outcome_model_for_compare1 import GameOutcomePredictorV2
+from outcome_model_for_compare2 import GameOutcomePredictorV3
 import const
 
 
@@ -78,7 +81,7 @@ def test_epoch_model2(model, data_loader, device, criterion):
 def train_gnn_gen_model(
         data_loader, 
         model_1_save_path,
-        num_epochs=50,
+        num_epochs=20,
         learning_rate=0.001
     ):
 
@@ -121,16 +124,18 @@ def train_model(
         train_data_loader: DataLoader,
         test_data_loader: DataLoader,
         model_2_save_path: str,
-        num_epochs: int = 50,
+        num_epochs: int = 20,
         learning_rate: float = 0.001
     ):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model_2 = GameOutcomePredictor(gen_2nd_half_model=model_1).to(device)
+    model_2 = GameOutcomePredictorV3(gen_2nd_half_model=model_1).to(device)
     optimizer = torch.optim.Adam(model_2.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
 
     # Train model 2
+    test_accuracies = []
+    losses = []
     for epoch in range(num_epochs):
         train_loss, train_accuracy = train_epoch_model2(
             model=model_2, 
@@ -145,6 +150,9 @@ def train_model(
             device=device,
             criterion=criterion)
         
+        test_accuracies.append(test_accuracy)
+        losses.append(train_loss)
+        
         print(
             '*****************************************\n'
             f'Epoch {epoch + 1}/{num_epochs} ||| '
@@ -157,7 +165,7 @@ def train_model(
     
     # Save model 2
     torch.save(model_2.state_dict(), model_2_save_path)
-    return model_2
+    return model_2, test_accuracies, losses
 
 def main():
 
@@ -189,7 +197,7 @@ def main():
         model_1 = load_model_1(model_1_save_path, data_pkl_path)
 
     # train the whole model using model 1
-    train_model(
+    model_2, test_accuracies, losses = train_model(
         model_1=model_1, 
         model_2_save_path=model_2_save_path,
         train_data_loader=train_data_loader, 
@@ -197,6 +205,13 @@ def main():
         learning_rate=learning_rate
     )
 
+    with open('test_accuracies_of_SAGE.txt', 'w') as f:
+        for accuracy in test_accuracies:
+            f.write(f'{accuracy:.4f}\n')  # Write each accuracy on a new line
+            
+    with open('train_loss_of_SAGE.txt', 'w') as f:
+        for loss in losses:
+            f.write(f'{loss:.4f}\n')  # Write each accuracy on a new line
 
 if __name__ == '__main__':
     main()
