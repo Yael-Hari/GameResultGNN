@@ -50,18 +50,11 @@ Packages include:
 
 ## Usage
 
-To train the models, use the `train.py` script:
+To run the project, use the `train.py` script:
 
 ```bash
-python train.py --model <model_name> --epochs <num_epochs> --batch_size <batch_size> --learning_rate <learning_rate>
+python train.py 
 ```
-
-### Arguments
-
-- `--model` - Model to train (`vae` or `predictor`)
-- `--epochs` - Number of training epochs (default: 50)
-- `--batch_size` - Batch size for training (default: 32)
-- `--learning_rate` - Learning rate for the optimizer (default: 0.001)
 
 ### Example Usage
 
@@ -70,19 +63,6 @@ To train the 2nd Half VAE model for 50 epochs with a batch size of 32:
 python train.py --model vae --epochs 50 --batch_size 32 --learning_rate 0.001
 ```
 
-## Directory Structure
-
-```
-.
-├── data/                   # Raw and preprocessed data
-├── models/                 # Model architectures
-│   ├── vae.py              # 2nd Half VAE model
-│   └── predictor.py        # 2nd Half Live Predictor model
-├── train.py                # Training script
-├── utils/                  # Utility scripts for data processing, evaluation
-├── README.md
-└── requirements.txt        # Project dependencies
-```
 
 ## Acknowledgments
 
