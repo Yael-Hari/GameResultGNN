@@ -39,8 +39,9 @@ We have implemented four GNN-based models:
 ## Usage
 We ran the project by executing:
 
-```bash
-python train.py ```
+```
+python train.py
+```
 
 Each run generates two output files:
 
@@ -48,7 +49,7 @@ A loss.txt file logging the model's loss over epochs.
 A balanced_accuracy.txt file recording the balanced accuracy for each model.
 After running the four models, run the visualization script to display the graph.
 
-```bash
+```
 python visualization.py
 ```
 
