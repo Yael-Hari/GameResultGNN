@@ -26,15 +26,10 @@ The pass map data is sourced from [StatsBomb](https://statsbomb.com/) and includ
 ### Model Architecture
 We have implemented four GNN-based models:
 
-1. **GAT**
-2. **SAGE**
-3. **GCN**
-4. **Temporal Convolution**
-
-## Authors
-- Yahav Cohen
-- Yael Hari
-- Yonatan Sabag
+1. **GAT** (outcome_model_for_compare1.py)
+2. **SAGE** (outcome_model_for_compare2.py)
+3. **GCN** (game_outcome_predict_model.py)
+4. **Temporal Convolution** (temporal_conv.py)
 
 ## Usage
 We ran the project by executing:
@@ -52,4 +47,11 @@ After running the four models, run the visualization script to display the graph
 ```
 python visualization.py
 ```
+
+## Authors
+- Yahav Cohen
+- Yael Hari
+- Yonatan Sabag
+
+
 
