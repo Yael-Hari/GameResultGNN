@@ -28,7 +28,7 @@ We have implemented four GNN-based models:
 
 1. **GAT**
 2. **SAGE**
-3. **GCR**
+3. **GCN**
 4. **Temporal Convolution**
 
 ## Authors
